@@ -1,24 +1,23 @@
 import React, {useState, useEffect} from 'react';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {RouteProp} from '@react-navigation/native';
-import {RootStackParamList} from '../../App';
 import {loadExamData} from '../utils/csvParser';
 import {Question, ExamData} from '../types/Question';
 
-type ReviewModeScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  'ReviewMode'
->;
-type ReviewModeScreenRouteProp = RouteProp<RootStackParamList, 'ReviewMode'>;
-
-interface Props {
-  navigation: ReviewModeScreenNavigationProp;
-  route: ReviewModeScreenRouteProp;
+interface ReviewModeScreenProps {
+  navigation: {
+    navigate: (screen: string, params?: any) => void;
+    goBack: () => void;
+  };
+  route: {
+    params: {
+      folderName: string;
+      selectedParts: number[];
+    };
+  };
 }
 
-const ReviewModeScreen: React.FC<Props> = ({navigation, route}) => {
-  const folderName = route?.params?.folderName || '';
-  const selectedParts = route?.params?.selectedParts || [];
+const ReviewModeScreen: React.FC<ReviewModeScreenProps> = ({ navigation, route }) => {
+  const { folderName, selectedParts } = route.params;
+  const selectedPartsArray = selectedParts || [];
   const [examData, setExamData] = useState<ExamData | null>(null);
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -31,7 +30,7 @@ const ReviewModeScreen: React.FC<Props> = ({navigation, route}) => {
 
   const loadData = async () => {
     try {
-      const data = await loadExamData(folderName, selectedParts);
+      const data = await loadExamData(folderName || '', selectedPartsArray);
       setExamData(data);
       
       const questions: Question[] = [];
@@ -89,7 +88,7 @@ const ReviewModeScreen: React.FC<Props> = ({navigation, route}) => {
     if (result && reviewAgainCount > 0) {
       showOnlyReviewQuestions(currentReviewStatus);
     } else {
-      navigation.popToTop();
+      navigate('/');
     }
   };
 
@@ -101,7 +100,7 @@ const ReviewModeScreen: React.FC<Props> = ({navigation, route}) => {
     
     if (reviewQuestions.length === 0) {
       alert('다시 볼 문제가 없습니다.');
-      navigation.popToTop();
+      navigate('/');
       return;
     }
 
@@ -176,7 +175,67 @@ const ReviewModeScreen: React.FC<Props> = ({navigation, route}) => {
           textAlign: 'center',
           color: '#666'
         }
-      }, folderName)
+      }, folderName || '')
+    ]),
+
+    // Navigation Buttons
+    React.createElement('div', {
+      key: 'buttons',
+      style: {
+        padding: '20px',
+        display: 'flex',
+        gap: '10px',
+        maxWidth: '800px',
+        margin: '0 auto'
+      }
+    }, [
+      React.createElement('button', {
+        key: 'prev',
+        onClick: goToPreviousQuestion,
+        disabled: currentQuestionIndex === 0,
+        style: {
+          flex: 1,
+          backgroundColor: currentQuestionIndex === 0 ? '#f5f5f5' : '#fff',
+          padding: '15px',
+          borderRadius: '10px',
+          border: '1px solid #ddd',
+          fontSize: '16px',
+          color: '#666',
+          cursor: currentQuestionIndex === 0 ? 'not-allowed' : 'pointer'
+        }
+      }, '이전'),
+
+      React.createElement('button', {
+        key: 'again',
+        onClick: handleReviewAgain,
+        style: {
+          flex: 1,
+          padding: '15px',
+          borderRadius: '10px',
+          border: 'none',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          color: '#fff',
+          backgroundColor: '#FF9800',
+          cursor: 'pointer'
+        }
+      }, '다시 보기'),
+
+      React.createElement('button', {
+        key: 'understood',
+        onClick: handleUnderstood,
+        style: {
+          flex: 1,
+          padding: '15px',
+          borderRadius: '10px',
+          border: 'none',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          color: '#fff',
+          backgroundColor: '#4CAF50',
+          cursor: 'pointer'
+        }
+      }, '이해함')
     ]),
 
     // Content
@@ -184,6 +243,7 @@ const ReviewModeScreen: React.FC<Props> = ({navigation, route}) => {
       key: 'content',
       style: {
         padding: '20px',
+        paddingTop: '0',
         maxWidth: '800px',
         margin: '0 auto'
       }
@@ -285,66 +345,6 @@ const ReviewModeScreen: React.FC<Props> = ({navigation, route}) => {
           }
         }, currentQuestion.explanation)
       ])
-    ]),
-
-    // Buttons
-    React.createElement('div', {
-      key: 'buttons',
-      style: {
-        padding: '20px',
-        display: 'flex',
-        gap: '10px',
-        maxWidth: '800px',
-        margin: '0 auto'
-      }
-    }, [
-      React.createElement('button', {
-        key: 'prev',
-        onClick: goToPreviousQuestion,
-        disabled: currentQuestionIndex === 0,
-        style: {
-          flex: 1,
-          backgroundColor: currentQuestionIndex === 0 ? '#f5f5f5' : '#fff',
-          padding: '15px',
-          borderRadius: '10px',
-          border: '1px solid #ddd',
-          fontSize: '16px',
-          color: '#666',
-          cursor: currentQuestionIndex === 0 ? 'not-allowed' : 'pointer'
-        }
-      }, '이전'),
-
-      React.createElement('button', {
-        key: 'again',
-        onClick: handleReviewAgain,
-        style: {
-          flex: 1,
-          padding: '15px',
-          borderRadius: '10px',
-          border: 'none',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          color: '#fff',
-          backgroundColor: '#FF9800',
-          cursor: 'pointer'
-        }
-      }, '다시 보기'),
-
-      React.createElement('button', {
-        key: 'understood',
-        onClick: handleUnderstood,
-        style: {
-          flex: 1,
-          padding: '15px',
-          borderRadius: '10px',
-          border: 'none',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          color: '#fff',
-          backgroundColor: '#4CAF50',
-          cursor: 'pointer'
-        }
-      }, '이해함')
     ])
   ]);
 };

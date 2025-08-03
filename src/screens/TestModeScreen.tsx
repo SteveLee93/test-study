@@ -1,25 +1,25 @@
 import React, {useState, useEffect} from 'react';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {RouteProp} from '@react-navigation/native';
-import {RootStackParamList} from '../../App';
 import {loadExamData} from '../utils/csvParser';
 import {Question, ExamData} from '../types/Question';
 
-type TestModeScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  'TestMode'
->;
-type TestModeScreenRouteProp = RouteProp<RootStackParamList, 'TestMode'>;
-
-interface Props {
-  navigation: TestModeScreenNavigationProp;
-  route: TestModeScreenRouteProp;
-}
-
 type TestState = 'answering' | 'showing_result' | 'completed';
 
-const TestModeScreen: React.FC<Props> = ({navigation, route}) => {
-  const {folderName, selectedParts} = route.params;
+interface TestModeScreenProps {
+  navigation: {
+    navigate: (screen: string, params?: any) => void;
+    goBack: () => void;
+  };
+  route: {
+    params: {
+      folderName: string;
+      selectedParts: number[];
+    };
+  };
+}
+
+const TestModeScreen: React.FC<TestModeScreenProps> = ({ navigation, route }) => {
+  const { folderName, selectedParts } = route.params;
+  const selectedPartsArray = selectedParts || [];
   const [examData, setExamData] = useState<ExamData | null>(null);
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -33,7 +33,7 @@ const TestModeScreen: React.FC<Props> = ({navigation, route}) => {
 
   const loadData = async () => {
     try {
-      const data = await loadExamData(folderName, selectedParts);
+      const data = await loadExamData(folderName || '', selectedPartsArray);
       setExamData(data);
       
       const questions: Question[] = [];
@@ -99,7 +99,7 @@ const TestModeScreen: React.FC<Props> = ({navigation, route}) => {
     if (result) {
       showWrongAnswersOnly();
     } else {
-      navigation.popToTop();
+      navigate('/');
     }
   };
 
@@ -110,7 +110,7 @@ const TestModeScreen: React.FC<Props> = ({navigation, route}) => {
     
     if (wrongQuestions.length === 0) {
       alert('축하합니다! 모든 문제를 맞혔습니다!');
-      navigation.popToTop();
+      navigate('/');
       return;
     }
 
@@ -215,17 +215,92 @@ const TestModeScreen: React.FC<Props> = ({navigation, route}) => {
           textAlign: 'center',
           color: '#666'
         }
-      }, folderName),
-      testState === 'showing_result' && React.createElement('div', {
-        key: 'result',
+      }, folderName || '')
+      // testState === 'showing_result' && React.createElement('div', {
+      //   key: 'result',
+      //   style: {
+      //     fontSize: '18px',
+      //     fontWeight: 'bold',
+      //     textAlign: 'center',
+      //     marginTop: '10px',
+      //     color: isCorrect ? '#4CAF50' : '#f44336'
+      //   }
+      // }, isCorrect ? '정답!' : '오답')
+    ]),
+
+    // Navigation Buttons
+    React.createElement('div', {
+      key: 'buttons',
+      style: {
+        padding: '20px',
+        display: 'flex',
+        gap: '10px',
+        maxWidth: '800px',
+        margin: '0 auto'
+      }
+    }, testState === 'answering' ? [
+      React.createElement('button', {
+        key: 'prev',
+        onClick: goToPreviousQuestion,
+        disabled: currentQuestionIndex === 0,
         style: {
-          fontSize: '18px',
-          fontWeight: 'bold',
-          textAlign: 'center',
-          marginTop: '10px',
-          color: isCorrect ? '#4CAF50' : '#f44336'
+          flex: 1,
+          backgroundColor: currentQuestionIndex === 0 ? '#f5f5f5' : '#fff',
+          padding: '15px',
+          borderRadius: '10px',
+          border: '1px solid #ddd',
+          fontSize: '16px',
+          color: '#666',
+          cursor: currentQuestionIndex === 0 ? 'not-allowed' : 'pointer'
         }
-      }, isCorrect ? '정답!' : '오답')
+      }, '이전'),
+      React.createElement('button', {
+        key: 'submit',
+        onClick: handleSubmitAnswer,
+        disabled: selectedAnswer === 0,
+        style: {
+          flex: 2,
+          backgroundColor: selectedAnswer === 0 ? '#f5f5f5' : '#2196F3',
+          padding: '15px',
+          borderRadius: '10px',
+          border: 'none',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          color: '#fff',
+          cursor: selectedAnswer === 0 ? 'not-allowed' : 'pointer'
+        }
+      }, '제출')
+    ] : [
+      React.createElement('button', {
+        key: 'prev',
+        onClick: goToPreviousQuestion,
+        disabled: currentQuestionIndex === 0,
+        style: {
+          flex: 1,
+          backgroundColor: currentQuestionIndex === 0 ? '#f5f5f5' : '#fff',
+          padding: '15px',
+          borderRadius: '10px',
+          border: '1px solid #ddd',
+          fontSize: '16px',
+          color: '#666',
+          cursor: currentQuestionIndex === 0 ? 'not-allowed' : 'pointer'
+        }
+      }, '이전'),
+      React.createElement('button', {
+        key: 'next',
+        onClick: handleNextQuestion,
+        style: {
+          flex: 2,
+          backgroundColor: '#4CAF50',
+          padding: '15px',
+          borderRadius: '10px',
+          border: 'none',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          color: '#fff',
+          cursor: 'pointer'
+        }
+      }, currentQuestionIndex === allQuestions.length - 1 ? '결과 보기' : '다음')
     ]),
 
     // Content
@@ -233,6 +308,7 @@ const TestModeScreen: React.FC<Props> = ({navigation, route}) => {
       key: 'content',
       style: {
         padding: '20px',
+        paddingTop: '0',
         maxWidth: '800px',
         margin: '0 auto'
       }
@@ -341,81 +417,6 @@ const TestModeScreen: React.FC<Props> = ({navigation, route}) => {
           }
         }, currentQuestion.explanation)
       ])
-    ]),
-
-    // Buttons
-    React.createElement('div', {
-      key: 'buttons',
-      style: {
-        padding: '20px',
-        display: 'flex',
-        gap: '10px',
-        maxWidth: '800px',
-        margin: '0 auto'
-      }
-    }, testState === 'answering' ? [
-      React.createElement('button', {
-        key: 'prev',
-        onClick: goToPreviousQuestion,
-        disabled: currentQuestionIndex === 0,
-        style: {
-          flex: 1,
-          backgroundColor: currentQuestionIndex === 0 ? '#f5f5f5' : '#fff',
-          padding: '15px',
-          borderRadius: '10px',
-          border: '1px solid #ddd',
-          fontSize: '16px',
-          color: '#666',
-          cursor: currentQuestionIndex === 0 ? 'not-allowed' : 'pointer'
-        }
-      }, '이전'),
-      React.createElement('button', {
-        key: 'submit',
-        onClick: handleSubmitAnswer,
-        disabled: selectedAnswer === 0,
-        style: {
-          flex: 2,
-          backgroundColor: selectedAnswer === 0 ? '#f5f5f5' : '#2196F3',
-          padding: '15px',
-          borderRadius: '10px',
-          border: 'none',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          color: '#fff',
-          cursor: selectedAnswer === 0 ? 'not-allowed' : 'pointer'
-        }
-      }, '제출')
-    ] : [
-      React.createElement('button', {
-        key: 'prev',
-        onClick: goToPreviousQuestion,
-        disabled: currentQuestionIndex === 0,
-        style: {
-          flex: 1,
-          backgroundColor: currentQuestionIndex === 0 ? '#f5f5f5' : '#fff',
-          padding: '15px',
-          borderRadius: '10px',
-          border: '1px solid #ddd',
-          fontSize: '16px',
-          color: '#666',
-          cursor: currentQuestionIndex === 0 ? 'not-allowed' : 'pointer'
-        }
-      }, '이전'),
-      React.createElement('button', {
-        key: 'next',
-        onClick: handleNextQuestion,
-        style: {
-          flex: 2,
-          backgroundColor: '#4CAF50',
-          padding: '15px',
-          borderRadius: '10px',
-          border: 'none',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          color: '#fff',
-          cursor: 'pointer'
-        }
-      }, currentQuestionIndex === allQuestions.length - 1 ? '완료' : '다음')
     ])
   ]);
 };

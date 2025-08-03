@@ -1,31 +1,35 @@
 import React, {useState, useEffect} from 'react';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {RootStackParamList} from '../../App';
+import { getAvailableFolders } from '../utils/csvParser';
 
-type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
-
-interface Props {
-  navigation: HomeScreenNavigationProp;
+interface HomeScreenProps {
+  navigation: {
+    navigate: (screen: string, params?: any) => void;
+  };
 }
 
-const HomeScreen: React.FC<Props> = ({navigation}) => {
+const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [folders, setFolders] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('HomeScreen mounted');
-    const timer = setTimeout(() => {
-      console.log('Setting folders and loading false');
-      setFolders(['2023_1회', '2022_2회']);
-      setLoading(false);
-    }, 1000);
+    const loadFolders = async () => {
+      try {
+        const availableFolders = await getAvailableFolders();
+        setFolders(availableFolders);
+      } catch (error) {
+        console.error('Error loading folders:', error);
+        setFolders([]);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    return () => clearTimeout(timer);
+    loadFolders();
   }, []);
 
   const handleFolderSelect = (folderName: string) => {
     console.log('Selected folder:', folderName);
-    navigation.navigate('PartSelection', {folderName});
+    navigation.navigate('PartSelection', { folderName });
   };
 
   console.log('Rendering HomeScreen, loading:', loading, 'folders:', folders);

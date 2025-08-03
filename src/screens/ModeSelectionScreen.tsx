@@ -1,21 +1,4 @@
 import React from 'react';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {RouteProp} from '@react-navigation/native';
-import {RootStackParamList} from '../../App';
-
-type ModeSelectionScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  'ModeSelection'
->;
-type ModeSelectionScreenRouteProp = RouteProp<
-  RootStackParamList,
-  'ModeSelection'
->;
-
-interface Props {
-  navigation: ModeSelectionScreenNavigationProp;
-  route: ModeSelectionScreenRouteProp;
-}
 
 interface ModeInfo {
   mode: 'review' | 'test';
@@ -39,26 +22,32 @@ const MODES: ModeInfo[] = [
   },
 ];
 
-const ModeSelectionScreen: React.FC<Props> = ({ navigation, route }) => {
-  const folderName = route?.params?.folderName || '';
-  const selectedParts = route?.params?.selectedParts || [];
+interface ModeSelectionScreenProps {
+  navigation: {
+    navigate: (screen: string, params?: any) => void;
+  };
+  route: {
+    params: {
+      folderName: string;
+      selectedParts: number[];
+    };
+  };
+}
+
+const ModeSelectionScreen: React.FC<ModeSelectionScreenProps> = ({ navigation, route }) => {
+  const { folderName, selectedParts } = route.params;
+  const selectedPartsArray = selectedParts || [];
 
   const handleModeSelect = (mode: 'review' | 'test') => {
     if (mode === 'review') {
-      navigation.navigate('ReviewMode', {
-        folderName,
-        selectedParts,
-      });
+      navigation.navigate('ReviewMode', { folderName, selectedParts });
     } else {
-      navigation.navigate('TestMode', {
-        folderName,
-        selectedParts,
-      });
+      navigation.navigate('TestMode', { folderName, selectedParts });
     }
   };
 
   const getSelectedPartsText = () => {
-    return selectedParts.map((part: number) => `${part}과목`).join(', ');
+    return selectedPartsArray.map((part: number) => `${part}과목`).join(', ');
   };
 
   const renderModeItem = (modeInfo: ModeInfo) => (
@@ -156,7 +145,7 @@ const ModeSelectionScreen: React.FC<Props> = ({ navigation, route }) => {
           textAlign: 'center',
           marginBottom: '5px'
         }
-      }, folderName),
+      }, folderName || ''),
       React.createElement('div', {
         key: 'parts',
         style: {

@@ -21,7 +21,8 @@
     "react-native-gesture-handler": "^2.12.1",
     "react-native-safe-area-context": "^4.7.1",
     "react-native-screens": "^3.22.1",
-    "react-native-web": "^0.19.9"
+    "react-native-web": "^0.19.9",
+    "react-router-dom": "^7.7.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

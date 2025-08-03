@@ -22,6 +22,21 @@ export const parseCSVLine = (line: string): string[] => {
   return result;
 };
 
+const parseAnswer = (answerText: string): number => {
+  const circledNumbers: { [key: string]: number } = {
+    '①': 1, '②': 2, '③': 3, '④': 4, '⑤': 5
+  };
+  
+  const trimmed = answerText.trim();
+  
+  if (circledNumbers[trimmed]) {
+    return circledNumbers[trimmed];
+  }
+  
+  const parsed = parseInt(trimmed);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
 export const parseCSVContent = (content: string): Question[] => {
   const lines = content.trim().split('\n');
   const questions: Question[] = [];
@@ -36,7 +51,7 @@ export const parseCSVContent = (content: string): Question[] => {
         option2: columns[2],
         option3: columns[3],
         option4: columns[4],
-        answer: parseInt(columns[5]),
+        answer: parseAnswer(columns[5]),
         explanation: columns[6],
       };
       questions.push(question);
@@ -48,10 +63,10 @@ export const parseCSVContent = (content: string): Question[] => {
 
 export const getAvailableFolders = async (): Promise<string[]> => {
   try {
-    return ['2023_1회', '2022_2회'];
+    return ['2023_1회', '2023_2회', '2023_3회', '2024_1회', '2024_2회', '2024_3회'];
   } catch (error) {
     console.error('Error reading folders:', error);
-    return ['2023_1회', '2022_2회'];
+    return ['2023_1회', '2023_2회', '2023_3회', '2024_1회', '2024_2회', '2024_3회'];
   }
 };
 

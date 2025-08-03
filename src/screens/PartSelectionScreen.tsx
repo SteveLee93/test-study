@@ -1,21 +1,4 @@
 import React, { useState } from 'react';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {RouteProp} from '@react-navigation/native';
-import {RootStackParamList} from '../../App';
-
-type PartSelectionScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  'PartSelection'
->;
-type PartSelectionScreenRouteProp = RouteProp<
-  RootStackParamList,
-  'PartSelection'
->;
-
-interface Props {
-  navigation: PartSelectionScreenNavigationProp;
-  route: PartSelectionScreenRouteProp;
-}
 
 interface PartInfo {
   number: number;
@@ -31,8 +14,19 @@ const PARTS: PartInfo[] = [
   { number: 5, name: '5과목', description: '정보시스템 구축관리' },
 ];
 
-const PartSelectionScreen: React.FC<Props> = ({ navigation, route }) => {
-  const folderName = route?.params?.folderName || '';
+interface PartSelectionScreenProps {
+  navigation: {
+    navigate: (screen: string, params?: any) => void;
+  };
+  route: {
+    params: {
+      folderName: string;
+    };
+  };
+}
+
+const PartSelectionScreen: React.FC<PartSelectionScreenProps> = ({ navigation, route }) => {
+  const { folderName } = route.params;
   const [selectedParts, setSelectedParts] = useState<number[]>([]);
 
   const togglePart = (partNumber: number) => {
@@ -51,10 +45,7 @@ const PartSelectionScreen: React.FC<Props> = ({ navigation, route }) => {
       return;
     }
 
-    navigation.navigate('ModeSelection', {
-      folderName,
-      selectedParts,
-    });
+    navigation.navigate('ModeSelection', { folderName, selectedParts });
   };
 
   const renderPartItem = (part: PartInfo) => {
@@ -130,7 +121,7 @@ const PartSelectionScreen: React.FC<Props> = ({ navigation, route }) => {
         marginBottom: '10px',
         color: '#333'
       }
-    }, folderName),
+    }, folderName || ''),
     React.createElement('p', {
       key: 'subtitle',
       style: {
