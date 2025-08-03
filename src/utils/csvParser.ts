@@ -1,4 +1,5 @@
 import {Question, Part, ExamData} from '../types/Question';
+import {filterOutBlacklistedQuestions, generateQuestionId} from './questionBlacklist';
 
 export const parseCSVLine = (line: string): string[] => {
   const result: string[] = [];
@@ -37,7 +38,7 @@ const parseAnswer = (answerText: string): number => {
   return isNaN(parsed) ? 0 : parsed;
 };
 
-export const parseCSVContent = (content: string): Question[] => {
+export const parseCSVContent = (content: string, folderName?: string, partNumber?: number): Question[] => {
   const lines = content.trim().split('\n');
   const questions: Question[] = [];
   
@@ -46,6 +47,7 @@ export const parseCSVContent = (content: string): Question[] => {
     
     if (columns.length >= 7) {
       const question: Question = {
+        id: folderName && partNumber ? generateQuestionId(folderName, partNumber, columns[0]) : undefined,
         question: columns[0],
         option1: columns[1],
         option2: columns[2],
@@ -70,7 +72,7 @@ export const getAvailableFolders = async (): Promise<string[]> => {
   }
 };
 
-export const loadPartData = async (folderName: string, partNumber: number): Promise<Question[]> => {
+export const loadPartData = async (folderName: string, partNumber: number, includeBlacklisted: boolean = false): Promise<Question[]> => {
   try {
     const response = await fetch(`/data/${folderName}/part${partNumber}.csv`);
     
@@ -80,7 +82,14 @@ export const loadPartData = async (folderName: string, partNumber: number): Prom
     }
     
     const content = await response.text();
-    return parseCSVContent(content);
+    const questions = parseCSVContent(content, folderName, partNumber);
+    
+    // Filter out blacklisted questions unless explicitly requested
+    if (!includeBlacklisted) {
+      return filterOutBlacklistedQuestions(folderName, partNumber, questions);
+    }
+    
+    return questions;
   } catch (error) {
     console.error(`Error loading part ${partNumber}:`, error);
     return [];

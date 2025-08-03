@@ -4,8 +4,11 @@ import PartSelectionScreen from './src/screens/PartSelectionScreen';
 import ModeSelectionScreen from './src/screens/ModeSelectionScreen';
 import ReviewModeScreen from './src/screens/ReviewModeScreen';
 import TestModeScreen from './src/screens/TestModeScreen';
+import TestResultsScreen from './src/screens/TestResultsScreen';
+import QuestionManagementScreen from './src/screens/QuestionManagementScreen';
+import BrowseQuestionsScreen from './src/screens/BrowseQuestionsScreen';
 
-type Screen = 'Home' | 'PartSelection' | 'ModeSelection' | 'ReviewMode' | 'TestMode';
+type Screen = 'Home' | 'PartSelection' | 'ModeSelection' | 'ReviewMode' | 'TestMode' | 'TestResults' | 'QuestionManagement' | 'BrowseQuestions';
 
 interface NavigationState {
   screen: Screen;
@@ -56,6 +59,12 @@ const App = (): JSX.Element => {
           navigation={mockNavigation as any} 
           route={{ params: navigationState.params } as any} 
         />;
+      case 'TestResults':
+        return <TestResultsScreen navigation={mockNavigation as any} />;
+      case 'QuestionManagement':
+        return <QuestionManagementScreen navigation={mockNavigation as any} />;
+      case 'BrowseQuestions':
+        return <BrowseQuestionsScreen navigation={mockNavigation as any} />;
       default:
         return <HomeScreen navigation={mockNavigation as any} />;
     }
@@ -63,7 +72,7 @@ const App = (): JSX.Element => {
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      {navigationState.screen !== 'Home' && (
+      {navigationState.screen !== 'Home' && navigationState.screen !== 'TestResults' && navigationState.screen !== 'QuestionManagement' && navigationState.screen !== 'BrowseQuestions' && (
         <div style={{ 
           padding: '10px 20px', 
           backgroundColor: '#fff', 

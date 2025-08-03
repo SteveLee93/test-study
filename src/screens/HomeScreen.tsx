@@ -78,6 +78,48 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       key: 'subtitle',
       style: { textAlign: 'center', marginBottom: '30px' }
     }, '학습할 년도/회차를 선택하세요'),
+    React.createElement('div', {
+      key: 'actionButtons',
+      style: { 
+        textAlign: 'center', 
+        marginBottom: '20px',
+        display: 'flex',
+        gap: '10px',
+        justifyContent: 'center',
+        flexWrap: 'wrap'
+      }
+    }, [
+      React.createElement('button', {
+        key: 'results',
+        onClick: () => navigation.navigate('TestResults'),
+        style: {
+          padding: '12px 24px',
+          backgroundColor: '#2196F3',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '25px',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+        }
+      }, '📊 테스트 결과'),
+      React.createElement('button', {
+        key: 'management',
+        onClick: () => navigation.navigate('QuestionManagement'),
+        style: {
+          padding: '12px 24px',
+          backgroundColor: '#FF9800',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '25px',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+        }
+      }, '⚙️ 문제 관리')
+    ]),
     React.createElement('div', { key: 'folders' }, folderButtons)
   ]);
 };

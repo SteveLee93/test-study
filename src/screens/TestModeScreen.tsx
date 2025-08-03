@@ -1,6 +1,8 @@
 import React, {useState, useEffect} from 'react';
 import {loadExamData} from '../utils/csvParser';
-import {Question, ExamData} from '../types/Question';
+import {Question, ExamData, TestResult} from '../types/Question';
+import {saveTestResult, generateTestId} from '../utils/testResultsStorage';
+import {addToBlacklist} from '../utils/questionBlacklist';
 
 type TestState = 'answering' | 'showing_result' | 'completed';
 
@@ -26,6 +28,7 @@ const TestModeScreen: React.FC<TestModeScreenProps> = ({ navigation, route }) =>
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [testState, setTestState] = useState<TestState>('answering');
   const [loading, setLoading] = useState(true);
+  const [startTime] = useState<Date>(new Date());
 
   useEffect(() => {
     loadData();
@@ -76,6 +79,20 @@ const TestModeScreen: React.FC<TestModeScreenProps> = ({ navigation, route }) =>
     }
   };
 
+  const handleAddToBlacklist = () => {
+    const reason = prompt('이 문제를 블랙리스트에 추가하는 이유를 입력하세요:');
+    if (reason !== null) {
+      const partNumber = selectedPartsArray.find(part => {
+        // Find which part this question belongs to
+        const examPart = examData?.parts.find(p => p.partNumber === part);
+        return examPart?.questions.includes(currentQuestion);
+      }) || selectedPartsArray[0];
+      
+      addToBlacklist(folderName || '', partNumber, currentQuestion, reason || '사용자 요청');
+      alert('문제가 블랙리스트에 추가되었습니다.');
+    }
+  };
+
   const goToPreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
@@ -90,16 +107,40 @@ const TestModeScreen: React.FC<TestModeScreenProps> = ({ navigation, route }) =>
       return count + (selectedAnswers[index] === question.answer ? 1 : 0);
     }, 0);
 
+    const wrongCount = allQuestions.length - correctCount;
     const percentage = Math.round((correctCount / allQuestions.length) * 100);
+    const endTime = new Date();
+    const timeSpent = Math.round((endTime.getTime() - startTime.getTime()) / 1000 / 60); // minutes
+
+    // Get wrong question IDs for retry functionality
+    const wrongQuestionIds = allQuestions
+      .map((question, index) => selectedAnswers[index] !== question.answer ? index : -1)
+      .filter(id => id !== -1);
+
+    // Save test result
+    const testResult: TestResult = {
+      id: generateTestId(),
+      folderName: folderName || '',
+      selectedParts: selectedPartsArray,
+      totalQuestions: allQuestions.length,
+      correctAnswers: correctCount,
+      wrongAnswers: wrongCount,
+      score: percentage,
+      completedAt: endTime,
+      timeSpent,
+      wrongQuestionIds
+    };
+
+    saveTestResult(testResult);
 
     const result = confirm(
-      `테스트 완료\n총 ${allQuestions.length}문제 중 ${correctCount}문제 정답\n정답률: ${percentage}%\n\n오답 노트를 보시겠습니까?`
+      `테스트 완료!\n총 ${allQuestions.length}문제 중 ${correctCount}문제 정답\n정답률: ${percentage}%\n소요 시간: ${timeSpent}분\n\n오답 노트를 보시겠습니까?`
     );
 
     if (result) {
       showWrongAnswersOnly();
     } else {
-      navigate('/');
+      navigation.navigate('Home');
     }
   };
 
@@ -110,7 +151,7 @@ const TestModeScreen: React.FC<TestModeScreenProps> = ({ navigation, route }) =>
     
     if (wrongQuestions.length === 0) {
       alert('축하합니다! 모든 문제를 맞혔습니다!');
-      navigate('/');
+      navigation.navigate('Home');
       return;
     }
 
@@ -321,16 +362,37 @@ const TestModeScreen: React.FC<TestModeScreenProps> = ({ navigation, route }) =>
           padding: '20px',
           borderRadius: '10px',
           marginBottom: '20px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          position: 'relative'
         }
-      }, React.createElement('p', {
-        style: {
-          fontSize: '16px',
-          lineHeight: '24px',
-          color: '#333',
-          margin: 0
-        }
-      }, currentQuestion.question)),
+      }, [
+        React.createElement('p', {
+          key: 'text',
+          style: {
+            fontSize: '16px',
+            lineHeight: '24px',
+            color: '#333',
+            margin: '0 0 10px 0'
+          }
+        }, currentQuestion.question),
+        React.createElement('button', {
+          key: 'blacklist',
+          onClick: handleAddToBlacklist,
+          style: {
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            padding: '5px 10px',
+            backgroundColor: '#f44336',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '3px',
+            fontSize: '12px',
+            cursor: 'pointer',
+            opacity: 0.7
+          }
+        }, '🚫 블랙리스트')
+      ]),
 
       // Options
       React.createElement('div', {
